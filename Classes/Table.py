@@ -1,5 +1,5 @@
 import tkinter as tk
-from HoverButton import HoverButton
+from Classes.HoverButton import HoverButton
 
 
 class Table(tk.Frame):
@@ -21,7 +21,7 @@ class Table(tk.Frame):
             cursor = "hand2"
             # self.print()
             if row % 2:
-                bg = "lightgrey"
+                bg = "lightblue"
             else:
                 bg = "white"
             for column in range(columns):
@@ -56,7 +56,7 @@ class Table(tk.Frame):
                                        cursor=cursor)
                     mylabel.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
                 else:
-                    mylabel.config(text=column)
+                    mylabel.config(text=" ")
 
                 current_row.append(mylabel)
             self.labels.append(current_row)
@@ -78,7 +78,6 @@ class Table(tk.Frame):
                 print(self.get(i, j).cget("text"), end='')
                 print('      ', end='')
         print()
-
 
 class ExampleApp(tk.Tk):
     def __init__(self):

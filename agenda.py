@@ -4,8 +4,9 @@ from tkinter import *
 from tkinter import ttk, font
 import pyautogui
 from tkcalendar import DateEntry
-from Table import Table
+from Classes.Table import Table
 import tkinter as tk
+from tkinter.messagebox import showinfo
 
 
 class Agenda:
@@ -15,6 +16,8 @@ class Agenda:
     lenPhone = 10
 
     def __init__(self):
+        self.myTable = None
+        self.SearchBar = None
         self.menu = Tk()
         self.menu.resizable(0, 0)  # Estableix que no es pot canviar el tamany de la finestra
         self.menu.title("Agenda")
@@ -101,22 +104,12 @@ class Agenda:
         if self.name.get() == "" or len(self.name.get()) < 3 or self.surname.get() == "" or len(
                 self.surname.get()) < 3 or self.phone.get() == "" or len(
             self.phone.get()) != 9 or self.birthDate.get() == "":
-            self.mensage = Toplevel()
-            Agenda.ventana += 2
-            Agenda.posx_y += 50
-            self.mensage.resizable(0, 0)
-            self.mensage.title("Error")
-            self.mensage.transient(master=self.dialeg)
-            x = (Agenda.width // 3)
-            y = (Agenda.height // 3)
-            self.mensage.geometry('{}x{}+{}+{}'.format(500, 200, x, y))
-            self.aviso(self.mensage, 100, 30)
-            self.message.set(
-                "Llena todos los campos!\n\n Nombre: Mínimo 3 letras\n Apellido: Mínimo 3 letras \n Telefono: 9 "
-                "números \n Fecha: dd/mm/yyyy")
+            showinfo(
+                title='Error',
+                message="Llena todos los campos!\n\n Nombre: Mínimo 3 letras\n Apellido: Mínimo 3 letras \n Telefono: 9 "
+                        "números \n Fecha: dd/mm/yyyy"
+            )
 
-            self.mensage.grab_set()
-            self.dialeg.wait_window(self.mensage)
         else:
             if self.surname2.get() == "":
                 surnames = self.surname.get()
@@ -126,88 +119,122 @@ class Agenda:
             # INSERT customers.
             self.insertCustomer(self.name.get(), surnames, self.phone.get(), self.birthDate.get())
 
-            self.mensage2 = Toplevel()
-            Agenda.ventana += 2
-            Agenda.posx_y += 50
-            self.mensage2.resizable(0, 0)
-            self.mensage2.title("Mensaje éxito")
-            self.mensage2.transient(master=self.dialeg)
-            x = (Agenda.width // 3)
-            y = (Agenda.height // 3)
-            self.mensage2.geometry('{}x{}+{}+{}'.format(500, 200, x, y))
-            self.aviso(self.mensage2, 150, 75)
-            self.message.set("Cliente añadido!")
-
-            # El mètodo grab_set() asegura que no haya eventos que se envien a la otra ventana.
-            # Tiene que estar al final
-            self.mensage2.grab_set()
-            self.dialeg.wait_window(self.mensage2)
+            showinfo(
+                title='Cliente añadido',
+                message="Cliente añadido!"
+            )
             self.dialeg.destroy()
 
     def gestionarClientes(self):
 
-        dialeg = Toplevel()
-        self.centrar_ventana(dialeg)
+        dialogo = Toplevel()
+        self.centrar_ventana(dialogo)
         Agenda.ventana += 1
         Agenda.posx_y += 50
-        dialeg.geometry("800x600")
-        dialeg.resizable(0, 0)
-        dialeg['bg'] = '#B22222'
-        dialeg.title("Gestionar Clientes")
+        dialogo.geometry("800x600")
+        dialogo.resizable(0, 0)
+        mycolor = "#C2C2C2"
+        dialogo['bg'] = mycolor
+        dialogo.title("Gestionar Clientes")
 
-        LabelSBr = Label(dialeg, text="Search", font='Georgia 14', justify='center', bd=2, fg='white', bg='#B22222')
-        LabelSBr.place(x=345,y=10, width=100, height=20)
-        SearchBar = Entry(dialeg, bd=2,width=50)
-        SearchBar.grid(row=0, column=0, pady=35)
+        registros = self.getAllCustomers()
+        # print(self.getAllCustomers())
+        self.registroZero = ("ID", "Name", "Surnames", "Phone", "Birthdate", "Status")
+        registros.insert(0, self.registroZero)
 
-        tableFrame = Frame(dialeg)
-        tableFrame.grid(sticky='news', padx=80)
+        LabelSBr = Label(dialogo, text="Search:", font='Georgia 14', justify='center', bd=2, bg=mycolor)
+        LabelSBr.place(x=62, y=35, width=100, height=20)
+        self.SearchBar = Entry(dialogo, bd=2, width=50)
+        self.SearchBar.place(x=155, y=35, width=200, height=20)
+        dialogo.bind("<Key>", self.inputData)
 
+        self.value = tk.IntVar()
+        self.value.set(1)
+        radioBtn1 = tk.Radiobutton(dialogo, text="Name", padx=20, command=self.SelectedChoice,
+                                   variable=self.value,
+                                   value=1, bg=mycolor, activebackground=mycolor)
+        radioBtn1.place(x=155, y=60, height=20)
 
-        """
-        tableFrame = tk.Frame(dialeg, bg="gray", width=700, height=700)
-        tableFrame.grid(padx=100, pady=100)
-        """
+        radioBtn2 = tk.Radiobutton(dialogo, text="Phone", padx=20, command=self.SelectedChoice,
+                                   variable=self.value,
+                                   value=2, bg=mycolor, activebackground=mycolor)
+        radioBtn2.place(x=250, y=60, width=105, height=20)
+
+        self.myTable = self.scrollableTable(dialogo, registros)
+        self.myTable.place()
+        self.fillTable(self.myTable, registros)
+
+        dialogo.transient(master=self.menu)
+        dialogo.grab_set()
+        self.menu.wait_window(dialogo)
+
+    def SelectedChoice(self):
+        print(self.value.get())
+        self.SearchBar.delete(0,END)
+        self.SearchBar.insert(0,"")
+
+    def fillTable(self, table, myList):
+        for i in range(len(myList)):
+            for j in range(len(myList[i])):
+                table.set(i, j, myList[i][j])
+        return table
+
+    def scrollableTable(self, frame, registros):
+        tableFrame = Frame(frame)
+        tableFrame.grid(padx=80, pady=100)
+
         # Add a canvas in that frame
         canvas = tk.Canvas(tableFrame, width=610, height=425)
         canvas.grid()
 
-        registros = self.getAllCustomers()
-        # print(self.getAllCustomers())
-        registroZero = ("ID", "Name", "Surnames", "Phone", "Birthdate", "Status")
-        registros.insert(0, registroZero)
-
         lenRows = len(registros)
-        myTable = Table(tableFrame, lenRows, 7)
-        myTable.grid(row=0, column=0)
+        lenColumns = len(registros[0]) + 1
+
+        self.myTable = Table(tableFrame, lenRows, lenColumns)
+        self.myTable.grid(row=0, column=0, pady=30)
 
         # Creacion del Frame que va a contener la tabla
-        frame_buttons = tk.Frame(myTable, bg="blue")
+        frame_buttons = tk.Frame(self.myTable)
 
         # Enlaza el scrollbar con el canvas
         vsb = tk.Scrollbar(tableFrame, orient="vertical", command=canvas.yview)
         vsb.grid(row=0, column=5, sticky='ns')
         canvas.configure(yscrollcommand=vsb.set)
-        canvas.create_window((0, 0), window=myTable, anchor='ne')
+        canvas.create_window((0, 0), window=self.myTable, anchor='ne')
 
         # Update buttons frames idle tasks to let tkinter calculate buttons sizes
         frame_buttons.update_idletasks()
 
         canvas.config(scrollregion=canvas.bbox("all"))
 
-        # print("registros")
-        # Recorrer registro de clientes de la base de datos e introducir en la tabla:
-        print(len(registros))
-        for i in range(len(registros)):
-            # print(registros[i])
-            # print(len(registros[i]))
-            for j in range(len(registros[i])):
-                print(registros[i][j])
-                myTable.set(i, j, registros[i][j])
+        return self.myTable
 
-        dialeg.transient(master=self.menu)
-        dialeg.grab_set()
-        self.menu.wait_window(dialeg)
+    def inputData(self, event):
+
+        txt = self.SearchBar.get()
+        txt_for_query = txt + "%"
+
+        cursor = self.dbConnect()
+        if self.value.get() == 1:
+            cursor.execute("SELECT * FROM customers WHERE name LIKE '%s'" % txt_for_query)
+        else:
+            cursor.execute("SELECT * FROM customers WHERE phone LIKE '%s'" % txt_for_query)
+        res = cursor.fetchall()
+
+        res.insert(0, self.registroZero)
+        registros = self.getAllCustomers()
+        registros.insert(0, self.registroZero)
+
+        for i in range(len(registros)):
+            for j in range(len(registros[i]) + 1):
+                self.myTable.set(i, j, " ")
+        for i in range(len(res)):
+            for j in range(len(res[i])):
+                self.myTable.set(i, j, res[i][j])
+                if j == 5:
+                    self.myTable.set(i, 6, "Edit")
+
+        cursor.close()
 
     def selectCustomer(self, event):
         # Get selected item to Edit
@@ -298,7 +325,7 @@ class Agenda:
 
     def insertCustomer(self, name, surnames, phone, birthDate):
         try:
-            conn = sqlite3.connect('agenda.db')
+            conn = sqlite3.connect('DB/agenda.db')
         except Error as e:
             print(e)
         cursor = conn.cursor()
@@ -306,12 +333,27 @@ class Agenda:
                        (name, surnames, phone, birthDate))
         conn.commit()
 
-    def updateCustomer(self, name, surnames, phone, birthDate, status, cusId):
+    def dbConnect(self):
         try:
-            conn = sqlite3.connect('agenda.db')
+            conn = sqlite3.connect('DB/agenda.db')
         except Error as e:
             print(e)
         cursor = conn.cursor()
+        return cursor
+
+    def getAllCustomers(self):
+
+        cursor = self.dbConnect()
+        cursor.execute("SELECT * FROM customers")
+        rows = cursor.fetchall()
+        return rows
+
+    def updateCustomer(self, name, surnames, phone, birthDate, status, cusId):
+        try:
+            conn = sqlite3.connect('DB/agenda.db')
+        except Error as e:
+            print(e)
+        cursor = self.dbConnect()
         cursor.execute("""
         UPDATE customers
         SET name=%s, surname=%s, phone=%s, birthdate=%s, status=%s
@@ -319,17 +361,6 @@ class Agenda:
         """, (name, surnames, phone, birthDate, status, cusId))
 
         conn.commit()
-
-    def getAllCustomers(self):
-        # print("------------------------------------")
-        try:
-            conn = sqlite3.connect('agenda.db')
-        except Error as e:
-            print(e)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM customers")
-        rows = cursor.fetchall()
-        return rows
 
     def listaClientes(self):
         for i in range(len(self.agenda)):
@@ -383,7 +414,7 @@ class Agenda:
     def validateString(self, entrada):
         # abc=["a","b","c","d","e","f","g","h","i","j","k","l","m","n","ñ","o","p","q","r","s","t","u","v","w","x","y","z","ç"," "]
         num = 15
-        print(len(entrada))
+        # print(len(entrada))
         if str.isalpha(entrada) and len(entrada) < int(num) or entrada == "":
             return True
         else:
