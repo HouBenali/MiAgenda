@@ -15,7 +15,7 @@ table = """ CREATE TABLE CUSTOMERS (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             NAME CHAR(25) NOT NULL,
             SURNAME CHAR(25) NOT NULL,
-            PHONE CHAR(25) NOT NULL,
+            PHONE CHAR(25) NOT NULL UNIQUE,
             BIRTHDATE DATE NOT NULL,
             STATUS CHAR(4) NOT NULL
         ); """

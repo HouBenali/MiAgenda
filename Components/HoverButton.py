@@ -1,4 +1,6 @@
 import tkinter as tk
+import constant
+
 
 class HoverButton(tk.Button):
 
@@ -7,16 +9,20 @@ class HoverButton(tk.Button):
         self.labels = labels
         self.row_number = 0
         self.col_number = 0
-        self.defaultBackground = self["background"]
+        self.precolor = "lightblue"
         self.bind("<Enter>", self.on_enter)
         self.bind("<Leave>", self.on_leave)
+        self.bind("<Button-1>", self.on_click)
 
     def on_enter(self, e):
-        # self['background'] = self['activebackground']
         for b in self.labels[self.row_number]:
+            self.precolor = b['background']
             b['background'] = self['activebackground']
 
+    def on_click(self, e):
+        constant.this_row = self.row_number
+        print(constant.this_row, "+++++++++++++")
+
     def on_leave(self, e):
-        # self['background'] = self.defaultBackground
         for b in self.labels[self.row_number]:
-            b['background'] = self.defaultBackground
+            b['background'] = self.precolor
